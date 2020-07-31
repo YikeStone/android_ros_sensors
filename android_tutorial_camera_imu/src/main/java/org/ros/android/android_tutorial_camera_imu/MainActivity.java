@@ -71,7 +71,7 @@ public class MainActivity extends RosActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        //if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 int numberOfCameras = Camera.getNumberOfCameras();
                 final Toast toast;
@@ -90,7 +90,7 @@ public class MainActivity extends RosActivity {
                     }
                 });
             }
-        }
+        //}
         return true;
     }
 
@@ -153,7 +153,7 @@ public class MainActivity extends RosActivity {
                 camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
         }
-        cam.setParameters(camParams);
+        //cam.setParameters(camParams);
         return cam;
     }
 
