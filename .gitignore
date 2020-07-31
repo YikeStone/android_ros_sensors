@@ -16,3 +16,4 @@ captures/
 output.json 
 obj/
 .externalNativeBuild
+tags

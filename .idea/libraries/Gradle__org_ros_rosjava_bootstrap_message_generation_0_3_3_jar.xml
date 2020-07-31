@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: org.ros.rosjava_bootstrap:message_generation:0.3.3@jar">
-    <CLASSES>
-      <root url="jar://$USER_HOME$/rosjava/devel/share/maven/org/ros/rosjava_bootstrap/message_generation/0.3.3/message_generation-0.3.3.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

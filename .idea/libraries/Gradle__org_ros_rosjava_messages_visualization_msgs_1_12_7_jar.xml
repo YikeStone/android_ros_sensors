@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: org.ros.rosjava_messages:visualization_msgs:1.12.7@jar">
-    <CLASSES>
-      <root url="jar://$USER_HOME$/rosjava/devel/share/maven/org/ros/rosjava_messages/visualization_msgs/1.12.7/visualization_msgs-1.12.7.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
