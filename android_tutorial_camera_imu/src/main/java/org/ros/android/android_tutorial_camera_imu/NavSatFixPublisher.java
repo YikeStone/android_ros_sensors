@@ -55,6 +55,7 @@ import org.ros.node.topic.Publisher;
 public class NavSatFixPublisher implements NodeMain {
 
     private NavSatThread navSatThread;
+    private static String sID;
     private LocationManager locationManager;
     private NavSatListener navSatFixListener;
     private Publisher<NavSatFix> publisher;
@@ -102,7 +103,7 @@ public class NavSatFixPublisher implements NodeMain {
             NavSatFix fix = this.publisher.newMessage();
             //fix.getHeader().setStamp(Time.fromMillis(System.currentTimeMillis()));
             fix.getHeader().setStamp(connectedNode.getCurrentTime());
-            fix.getHeader().setFrameId("/gps");
+            fix.getHeader().setFrameId("/android_"+sID+"_gps");
 
             fix.getStatus().setStatus(currentStatus);
             fix.getStatus().setService(NavSatStatus.SERVICE_GPS);
@@ -142,15 +143,16 @@ public class NavSatFixPublisher implements NodeMain {
         }
     }
 
-    public NavSatFixPublisher(LocationManager manager) {
+    public NavSatFixPublisher(LocationManager manager, String nodeID) {
         this.locationManager = manager;
+        sID = nodeID;
     }
 
     //@Override
     public void onStart(ConnectedNode node) {
         try {
             this.connectedNode = node;
-            this.publisher = node.newPublisher("android/fix", "sensor_msgs/NavSatFix");
+            this.publisher = node.newPublisher("android_" + sID + "/fix", "sensor_msgs/NavSatFix");
             this.navSatFixListener = new NavSatListener(publisher);
             this.navSatThread = new NavSatThread(this.locationManager, this.navSatFixListener);
             this.navSatThread.start();
@@ -178,7 +180,7 @@ public class NavSatFixPublisher implements NodeMain {
     }
 
     public GraphName getDefaultNodeName() {
-        return GraphName.of("android_sensors_driver/imuPublisher");
+        return GraphName.of("android_" + sID + "/imuPublisher");
     }
 
     public void onError(Node node, Throwable throwable) {

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CameraImu</string>
+    <string name="sID_key">sID</string>
 </resources>

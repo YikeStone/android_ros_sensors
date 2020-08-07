@@ -18,16 +18,11 @@ package org.ros.android.view.camera;
 
 import com.google.common.base.Preconditions;
 
-import android.content.Context;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
-import android.util.AttributeSet;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 import org.ros.exception.RosRuntimeException;
 
 import java.io.IOException;
@@ -38,16 +33,21 @@ import java.util.List;
  * 
  * @author damonkohler@google.com (Damon Kohler)
  */
-public class CameraPreviewView extends ViewGroup {
+public class CameraPreviewView {
 
   private final static double ASPECT_TOLERANCE = 0.1;
 
-  private SurfaceHolder surfaceHolder;
+  private SurfaceTexture surfaceTexture;
   private Camera camera;
   private Size previewSize;
   private byte[] previewBuffer;
   private RawImageListener rawImageListener;
   private BufferingPreviewCallback bufferingPreviewCallback;
+
+  public CameraPreviewView() {
+    surfaceTexture = new SurfaceTexture(10);
+    bufferingPreviewCallback = new BufferingPreviewCallback();
+  }
 
   private final class BufferingPreviewCallback implements PreviewCallback {
     @Override
@@ -59,52 +59,6 @@ public class CameraPreviewView extends ViewGroup {
       }
       camera.addCallbackBuffer(previewBuffer);
     }
-  }
-
-  private final class SurfaceHolderCallback implements SurfaceHolder.Callback {
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-      try {
-        if (camera != null) {
-          camera.setPreviewDisplay(holder);
-        }
-      } catch (IOException e) {
-        throw new RosRuntimeException(e);
-      }
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-      releaseCamera();
-    }
-  }
-
-  private void init(Context context) {
-    SurfaceView surfaceView = new SurfaceView(context);
-    addView(surfaceView);
-    surfaceHolder = surfaceView.getHolder();
-    surfaceHolder.addCallback(new SurfaceHolderCallback());
-    surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    bufferingPreviewCallback = new BufferingPreviewCallback();
-  }
-
-  public CameraPreviewView(Context context) {
-    super(context);
-    init(context);
-  }
-
-  public CameraPreviewView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-    init(context);
-  }
-
-  public CameraPreviewView(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
-    init(context);
   }
 
   public void releaseCamera() {
@@ -133,7 +87,7 @@ public class CameraPreviewView extends ViewGroup {
     camera.startPreview();
     try {
       // This may have no effect if the SurfaceHolder is not yet created.
-      camera.setPreviewDisplay(surfaceHolder);
+      camera.setPreviewTexture(surfaceTexture);
     } catch (IOException e) {
       throw new RosRuntimeException(e);
     }
@@ -142,7 +96,7 @@ public class CameraPreviewView extends ViewGroup {
   private void setupCameraParameters() {
     Camera.Parameters parameters = camera.getParameters();
     List<Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-    previewSize = getOptimalPreviewSize(supportedPreviewSizes, getWidth(), getHeight());
+    previewSize = getOptimalPreviewSize(supportedPreviewSizes, 1920, 1080);
     parameters.setPreviewSize(previewSize.width, previewSize.height);
     parameters.setPreviewFormat(ImageFormat.NV21);
     camera.setParameters(parameters);
@@ -187,30 +141,5 @@ public class CameraPreviewView extends ViewGroup {
     previewBuffer = new byte[previewSize.height * previewSize.width * bits_per_pixel / 8];
     camera.addCallbackBuffer(previewBuffer);
     camera.setPreviewCallbackWithBuffer(bufferingPreviewCallback);
-  }
-
-  @Override
-  protected void onLayout(boolean changed, int l, int t, int r, int b) {
-    if (changed && getChildCount() > 0) {
-      final View child = getChildAt(0);
-      final int width = r - l;
-      final int height = b - t;
-
-      int previewWidth = width;
-      int previewHeight = height;
-      if (previewSize != null) {
-        previewWidth = previewSize.width;
-        previewHeight = previewSize.height;
-      }
-
-      // Center the child SurfaceView within the parent.
-      if (width * previewHeight > height * previewWidth) {
-        final int scaledChildWidth = previewWidth * height / previewHeight;
-        child.layout((width - scaledChildWidth) / 2, 0, (width + scaledChildWidth) / 2, height);
-      } else {
-        final int scaledChildHeight = previewHeight * width / previewWidth;
-        child.layout(0, (height - scaledChildHeight) / 2, width, (height + scaledChildHeight) / 2);
-      }
-    }
   }
 }

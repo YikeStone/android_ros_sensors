@@ -54,6 +54,7 @@ import org.ros.node.topic.Publisher;
  * @author axelfurlan@gmail.com (Axel Furlan)
  */
 public class ImuPublisher implements NodeMain {
+    private static String sID;
     private ImuThread imuThread;
     private SensorListener sensorListener;
     private SensorManager sensorManager;
@@ -160,7 +161,7 @@ public class ImuPublisher implements NodeMain {
                 //long time_delta_millis = System.currentTimeMillis() - SystemClock.uptimeMillis();
                 //this.imu.getHeader().setStamp(Time.fromMillis(time_delta_millis + event.timestamp/1000000));
                 this.imu.getHeader().setStamp(connectedNode.getCurrentTime());
-                this.imu.getHeader().setFrameId("/imu");// TODO Make parameter
+                this.imu.getHeader().setFrameId("/android_" + sID + "imu");// TODO Make parameter
 
                 publisher.publish(this.imu);
 
@@ -176,12 +177,13 @@ public class ImuPublisher implements NodeMain {
     }
 
 
-    public ImuPublisher(SensorManager manager) {
+    public ImuPublisher(SensorManager manager, String nodeID) {
         this.sensorManager = manager;
+        sID = nodeID;
     }
 
     public GraphName getDefaultNodeName() {
-        return GraphName.of("android_sensors_driver/imuPublisher");
+        return GraphName.of("android_" + sID + "/imuPublisher");
     }
 
     public void onError(Node node, Throwable throwable) {
@@ -190,7 +192,7 @@ public class ImuPublisher implements NodeMain {
     public void onStart(ConnectedNode node) {
         try {
             this.connectedNode = node;
-            this.publisher = node.newPublisher("android/imu", "sensor_msgs/Imu");
+            this.publisher = node.newPublisher("android_" + sID + "/imu", "sensor_msgs/Imu");
             // 	Determine if we have the various needed sensors
             boolean hasAccel = false;
             boolean hasGyro = false;

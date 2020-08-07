@@ -62,6 +62,7 @@
         android:onClick="advancedCheckboxClicked"
         android:text="@string/show_advanced"/>
 
+
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="fill_parent"
@@ -119,7 +120,14 @@
         android:layout_gravity="bottom"
         android:onClick="cancelButtonClicked"
         android:text="@string/cancel"/>
-
+    <Button
+        android:id="@+id/reset_node_prefix"
+        style="@style/padded"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:onClick="resetNodePrefixButtonClicked"
+        android:text="@string/reset_node_prefix"/>
     <LinearLayout
         android:id="@+id/connection_layout"
         android:layout_width="match_parent"

@@ -17,6 +17,7 @@ package org.ros.android.android_tutorial_camera_imu;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
@@ -29,11 +30,16 @@ import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import android.util.Log;
 import org.ros.address.InetAddressFactory;
+import org.ros.android.MasterChooser;
 import org.ros.android.RosActivity;
 import org.ros.android.view.camera.RosCameraPreviewView;
 import org.ros.node.NodeConfiguration;
 import org.ros.node.NodeMainExecutor;
+import android.content.SharedPreferences;
+import java.util.Random;
 
 /**
  * @author ethan.rublee@gmail.com (Ethan Rublee)
@@ -52,6 +58,24 @@ public class MainActivity extends RosActivity {
     private LocationManager mLocationManager;
     private SensorManager mSensorManager;
 
+        private static String sID = "1234";
+
+        private void id(Activity act) {
+
+            SharedPreferences sharedPref = act.getPreferences(Context.MODE_PRIVATE);
+
+            sID = sharedPref.getString(getString(R.string.sID_key), "1234");
+            Log.e("E", MasterChooser.getResetNodePrefixButtonClicked()+ "");
+            if (sID.equals("1234") || MasterChooser.getResetNodePrefixButtonClicked()) {
+
+                sID = Integer.toString(new Random().nextInt(Integer.MAX_VALUE/2) + Integer.MAX_VALUE / 2);
+                sID = sID.replace("-","");
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.sID_key), sID);
+                editor.commit();
+            }
+        }
+
     public MainActivity() {
         super("ROS", "Camera & Imu");
     }
@@ -62,11 +86,7 @@ public class MainActivity extends RosActivity {
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        setContentView(R.layout.activity_main);
-
-        rosCameraPreviewView = findViewById(R.id.ros_camera_preview_view);
-        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        mSensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
+        //setContentView(R.layout.activity_main);
     }
 
     @Override
@@ -96,6 +116,11 @@ public class MainActivity extends RosActivity {
 
     @Override @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) //API = 15
     protected void init(NodeMainExecutor nodeMainExecutor) {
+            id(this);
+        rosCameraPreviewView = new RosCameraPreviewView(sID);
+        mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        mSensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
+
         this.nodeMainExecutor = nodeMainExecutor;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -108,29 +133,29 @@ public class MainActivity extends RosActivity {
         }else {
             NodeConfiguration nodeConfiguration1 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration1.setMasterUri(getMasterUri());
-            nodeConfiguration1.setNodeName("android_sensors_driver_nav_sat_fix");
-            this.fix_pub = new NavSatFixPublisher(mLocationManager);
+            nodeConfiguration1.setNodeName("android_" + sID + "_nav_sat_fix");
+            this.fix_pub = new NavSatFixPublisher(mLocationManager, sID);
             nodeMainExecutor.execute(this.fix_pub, nodeConfiguration1);
 
             rosCameraPreviewView.setCamera(getCamera());
             NodeConfiguration nodeConfiguration2 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
             nodeConfiguration2.setMasterUri(getMasterUri());
-            nodeConfiguration2.setNodeName("android_sensors_driver_camera");
+            nodeConfiguration2.setNodeName("android_" + sID + "_camera");
             nodeMainExecutor.execute(this.rosCameraPreviewView, nodeConfiguration2);
         }
 
         NodeConfiguration nodeConfiguration3 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration3.setMasterUri(getMasterUri());
-        nodeConfiguration3.setNodeName("android_sensors_driver_imu");
-        this.imu_pub = new ImuPublisher(mSensorManager);
+        nodeConfiguration3.setNodeName("android_" + sID + "_imu");
+        this.imu_pub = new ImuPublisher(mSensorManager, sID);
         nodeMainExecutor.execute(this.imu_pub, nodeConfiguration3);
     }
 
     private void executeGPS() {
         NodeConfiguration nodeConfiguration1 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration1.setMasterUri(getMasterUri());
-        nodeConfiguration1.setNodeName("android_sensors_driver_nav_sat_fix");
-        this.fix_pub = new NavSatFixPublisher(mLocationManager);
+        nodeConfiguration1.setNodeName("android_" + sID + "_nav_sat_fix");
+        this.fix_pub = new NavSatFixPublisher(mLocationManager, sID);
         nodeMainExecutor.execute(this.fix_pub, nodeConfiguration1);
     }
 
@@ -138,7 +163,7 @@ public class MainActivity extends RosActivity {
         rosCameraPreviewView.setCamera(getCamera());
         NodeConfiguration nodeConfiguration2 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
         nodeConfiguration2.setMasterUri(getMasterUri());
-        nodeConfiguration2.setNodeName("android_sensors_driver_camera");
+        nodeConfiguration2.setNodeName("android_" + sID + "_camera");
         nodeMainExecutor.execute(this.rosCameraPreviewView, nodeConfiguration2);
     }
 

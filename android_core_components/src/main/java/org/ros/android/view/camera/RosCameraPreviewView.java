@@ -30,26 +30,20 @@ import org.ros.node.NodeMain;
  */
 public class RosCameraPreviewView extends CameraPreviewView implements NodeMain {
 
-  public RosCameraPreviewView(Context context) {
-    super(context);
-  }
+  private static String sID;
 
-  public RosCameraPreviewView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-  }
-
-  public RosCameraPreviewView(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
+  public RosCameraPreviewView(String nodeID){
+    sID = nodeID;
   }
 
   @Override
   public GraphName getDefaultNodeName() {
-    return GraphName.of("ros_camera_preview_view");
+    return GraphName.of("android_"+sID+"_camera");
   }
 
   @Override
   public void onStart(ConnectedNode connectedNode) {
-    setRawImageListener(new CompressedImagePublisher(connectedNode));
+    setRawImageListener(new CompressedImagePublisher(connectedNode, sID));
   }
 
   @Override

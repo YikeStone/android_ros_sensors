@@ -4,6 +4,7 @@
     <string name="app_name">ROS for Android</string>
     <string name="use_master">Connect</string>
     <string name="cancel">Cancel</string>
+    <string name="reset_node_prefix">Reset Prefix</string>
     <string name="qr_code">Read QRCode</string>
     <string name="master_uri_hint">http://localhost:11311/</string>
     <string name="new_master">New Public Master</string>

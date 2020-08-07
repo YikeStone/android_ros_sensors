@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -55,6 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -115,6 +117,8 @@ public class MasterChooser extends AppCompatActivity {
    * Number of recent Master URIs to store into preferences.
    */
   private static final int RECENT_MASTER_HISTORY_COUNT = 5;
+
+  private static boolean resetNodePrefix = false;
 
   private String selectedInterface;
   private AutoCompleteTextView uriText;
@@ -341,6 +345,14 @@ public class MasterChooser extends AppCompatActivity {
       // Call the Barcode Scanner to let the user scan a QR code.
       startActivityForResult(intent, 0);
     }
+  }
+
+  public void resetNodePrefixButtonClicked(View unused) {
+    resetNodePrefix = true;
+  }
+
+  public static boolean getResetNodePrefixButtonClicked(){
+    return resetNodePrefix;
   }
 
   public void advancedCheckboxClicked(View view) {
