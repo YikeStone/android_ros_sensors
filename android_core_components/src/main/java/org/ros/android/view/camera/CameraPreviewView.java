@@ -96,7 +96,7 @@ public class CameraPreviewView {
   private void setupCameraParameters() {
     Camera.Parameters parameters = camera.getParameters();
     List<Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
-    previewSize = getOptimalPreviewSize(supportedPreviewSizes, 1920, 1080);
+    previewSize = getOptimalPreviewSize(supportedPreviewSizes, 640, 480);
     parameters.setPreviewSize(previewSize.width, previewSize.height);
     parameters.setPreviewFormat(ImageFormat.NV21);
     camera.setParameters(parameters);

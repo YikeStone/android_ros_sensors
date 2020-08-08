@@ -172,10 +172,10 @@ public class MainActivity extends RosActivity {
         Camera.Parameters camParams = cam.getParameters();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             if (camParams.getSupportedFocusModes().contains(
-                    Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                    Camera.Parameters.FOCUS_MODE_INFINITY)) {
+                camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
             } else {
-                camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY);
             }
         }
         //cam.setParameters(camParams);

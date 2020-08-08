@@ -50,7 +50,7 @@ public class MainActivity extends RosActivity {
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.main);
-    rosCameraPreviewView = (RosCameraPreviewView) findViewById(R.id.ros_camera_preview_view);
+    //rosCameraPreviewView = (RosCameraPreviewView) findViewById(R.id.ros_camera_preview_view);
   }
 
   @Override
