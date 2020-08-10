@@ -27,8 +27,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import android.util.Log;
@@ -54,27 +58,18 @@ public class MainActivity extends RosActivity {
     private NavSatFixPublisher fix_pub;
     private ImuPublisher imu_pub;
 
+    private Switch cameraSwitch;
+    private Switch imuSwitch;
+    private Switch gpsSwitch;
+
+    private boolean cameraRunning;
+
     private NodeMainExecutor nodeMainExecutor;
     private LocationManager mLocationManager;
     private SensorManager mSensorManager;
+    private static String sID = "";
 
-        private static String sID = "1234";
-
-        private void id(Activity act) {
-
-            SharedPreferences sharedPref = act.getPreferences(Context.MODE_PRIVATE);
-
-            sID = sharedPref.getString(getString(R.string.sID_key), "1234");
-            Log.e("E", MasterChooser.getResetNodePrefixButtonClicked()+ "");
-            if (sID.equals("1234") || MasterChooser.getResetNodePrefixButtonClicked()) {
-
-                sID = Integer.toString(new Random().nextInt(Integer.MAX_VALUE/2) + Integer.MAX_VALUE / 2);
-                sID = sID.replace("-","");
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(getString(R.string.sID_key), sID);
-                editor.commit();
-            }
-        }
+    private NodeConfiguration nodeConfigurationGPS, nodeConfigurationCamera, nodeConfigurationImu;
 
     public MainActivity() {
         super("ROS", "Camera & Imu");
@@ -84,24 +79,76 @@ public class MainActivity extends RosActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
+        cameraRunning = false;
+        cameraSwitch = (Switch) findViewById(R.id.camera_switch);
+        imuSwitch = (Switch) findViewById(R.id.imu_switch);
+        gpsSwitch = (Switch) findViewById(R.id.gps_switch);
+
+        imuSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked)
+                    nodeMainExecutor.execute(imu_pub, nodeConfigurationImu);
+
+                else
+                    nodeMainExecutor.shutdownNodeMain(imu_pub);
+
+                Log.v("IMU publisher", ""+isChecked);
+            }
+        });
+
+        gpsSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked)
+                    nodeMainExecutor.execute(fix_pub, nodeConfigurationGPS);
+
+                else
+                    nodeMainExecutor.shutdownNodeMain(fix_pub);
+
+                Log.v("IMU publisher", ""+isChecked);
+            }
+        });
+
+        cameraSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                if(isChecked) {
+                    rosCameraPreviewView.setCamera(getCamera());
+                    nodeMainExecutor.execute(rosCameraPreviewView, nodeConfigurationCamera);
+                    cameraRunning = true;
+                }
+                else {
+                    nodeMainExecutor.shutdownNodeMain(rosCameraPreviewView);
+                    cameraRunning = false;
+                }
+                Log.v("IMU publisher", ""+isChecked);
+            }
+        });
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        //if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                int numberOfCameras = Camera.getNumberOfCameras();
-                final Toast toast;
-                if (numberOfCameras > 1) {
-                    cameraId = (cameraId + 1) % numberOfCameras;
-                    rosCameraPreviewView.releaseCamera();
-                    rosCameraPreviewView.setCamera(getCamera());
-                    toast = Toast.makeText(this, "Switching cameras.", Toast.LENGTH_SHORT);
-                } else {
-                    toast = Toast.makeText(this, "No alternative cameras to switch to.", Toast.LENGTH_SHORT);
+    public void onSwitchCameraButtonClicked(View view) {
+
+        final Toast toast;
+                if(!cameraRunning)
+                {
+                    toast = Toast.makeText(this, "Camera Publisher not running", Toast.LENGTH_SHORT);
+                }
+    else {
+                    int numberOfCameras = Camera.getNumberOfCameras();
+
+                    if (numberOfCameras > 1) {
+                        cameraId = (cameraId + 1) % numberOfCameras;
+                        rosCameraPreviewView.releaseCamera();
+                        rosCameraPreviewView.setCamera(getCamera());
+                        toast = Toast.makeText(this, "Switching cameras.", Toast.LENGTH_SHORT);
+                    } else {
+                        toast = Toast.makeText(this, "No alternative cameras to switch to.", Toast.LENGTH_SHORT);
+                    }
                 }
                 runOnUiThread(new Runnable() {
                     @Override
@@ -109,14 +156,11 @@ public class MainActivity extends RosActivity {
                         toast.show();
                     }
                 });
-            }
-        //}
-        return true;
     }
 
     @Override @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1) //API = 15
     protected void init(NodeMainExecutor nodeMainExecutor) {
-            id(this);
+        sID = MasterChooser.sID;
         rosCameraPreviewView = new RosCameraPreviewView(sID);
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         mSensorManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
@@ -131,40 +175,32 @@ public class MainActivity extends RosActivity {
             PERMISSIONS[3] = Manifest.permission.WRITE_EXTERNAL_STORAGE;
             ActivityCompat.requestPermissions(this, PERMISSIONS, 0);
         }else {
-            NodeConfiguration nodeConfiguration1 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-            nodeConfiguration1.setMasterUri(getMasterUri());
-            nodeConfiguration1.setNodeName("android_" + sID + "_nav_sat_fix");
-            this.fix_pub = new NavSatFixPublisher(mLocationManager, sID);
-            nodeMainExecutor.execute(this.fix_pub, nodeConfiguration1);
-
-            rosCameraPreviewView.setCamera(getCamera());
-            NodeConfiguration nodeConfiguration2 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-            nodeConfiguration2.setMasterUri(getMasterUri());
-            nodeConfiguration2.setNodeName("android_" + sID + "_camera");
-            nodeMainExecutor.execute(this.rosCameraPreviewView, nodeConfiguration2);
+            initGPS();
+            initCamera();
         }
+        initImu();
 
-        NodeConfiguration nodeConfiguration3 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-        nodeConfiguration3.setMasterUri(getMasterUri());
-        nodeConfiguration3.setNodeName("android_" + sID + "_imu");
-        this.imu_pub = new ImuPublisher(mSensorManager, sID);
-        nodeMainExecutor.execute(this.imu_pub, nodeConfiguration3);
     }
 
-    private void executeGPS() {
-        NodeConfiguration nodeConfiguration1 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-        nodeConfiguration1.setMasterUri(getMasterUri());
-        nodeConfiguration1.setNodeName("android_" + sID + "_nav_sat_fix");
+    private void initGPS() {
         this.fix_pub = new NavSatFixPublisher(mLocationManager, sID);
-        nodeMainExecutor.execute(this.fix_pub, nodeConfiguration1);
+        nodeConfigurationGPS = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+        nodeConfigurationGPS.setMasterUri(getMasterUri());
+        nodeConfigurationGPS.setNodeName(fix_pub.getDefaultNodeName());
     }
 
-    private void executeCamera() {
+    private void initCamera() {
         rosCameraPreviewView.setCamera(getCamera());
-        NodeConfiguration nodeConfiguration2 = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
-        nodeConfiguration2.setMasterUri(getMasterUri());
-        nodeConfiguration2.setNodeName("android_" + sID + "_camera");
-        nodeMainExecutor.execute(this.rosCameraPreviewView, nodeConfiguration2);
+        nodeConfigurationCamera = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+        nodeConfigurationCamera.setMasterUri(getMasterUri());
+        nodeConfigurationCamera.setNodeName(rosCameraPreviewView.getDefaultNodeName());
+    }
+
+    private void initImu() {
+        nodeConfigurationImu = NodeConfiguration.newPublic(InetAddressFactory.newNonLoopback().getHostAddress());
+        nodeConfigurationImu.setMasterUri(getMasterUri());
+        this.imu_pub = new ImuPublisher(mSensorManager, sID);
+        nodeConfigurationImu.setNodeName(imu_pub.getDefaultNodeName());
     }
 
     private Camera getCamera() {
@@ -188,17 +224,41 @@ public class MainActivity extends RosActivity {
         if (requestCode == 0) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // permission was granted, yay! Do the
-                executeGPS();
+                initGPS();
             }
             if (grantResults.length > 1 && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 // permission was granted, yay! Do the
-                executeCamera();
-            }
-
-            if (grantResults.length > 2 && grantResults[2] == PackageManager.PERMISSION_GRANTED &&
-                    grantResults[3] == PackageManager.PERMISSION_GRANTED) {
-                // permission was granted, yay! Do the
+                initCamera();
             }
         }
     }
+
+    public void onRadioButtonClicked(View view) {
+
+        boolean checked = ((RadioButton) view).isChecked();
+
+        switch(view.getId()) {
+
+            case R.id.res480:
+                if (checked)
+                    rosCameraPreviewView.setPreviewSize(640, 480);
+                    break;
+
+            case R.id.res720:
+                if (checked)
+                    rosCameraPreviewView.setPreviewSize(1280, 720);
+                break;
+
+            case R.id.res1080:
+                if (checked)
+                    rosCameraPreviewView.setPreviewSize(1920, 1080);
+                    break;
+        }
+
+        if(cameraRunning){
+            rosCameraPreviewView.releaseCamera();
+            rosCameraPreviewView.setCamera(getCamera());
+        }
+    }
+
 }
